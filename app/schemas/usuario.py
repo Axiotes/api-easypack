@@ -12,6 +12,15 @@ class UsuarioCreate(BaseModel):
     id_produto: int
 
 
+class UsuarioUpdate(BaseModel):
+    nm_usuario: str | None = Field(default=None, min_length=3, max_length=100)
+    nm_completo: str | None = Field(default=None, min_length=3, max_length=255)
+    senha: str | None = Field(default=None, min_length=6, max_length=100)
+    cargo: CargoUsuario | None = None
+    id_subsetor: int | None = None
+    id_produto: int | None = None
+
+
 class UsuarioRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

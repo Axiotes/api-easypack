@@ -13,8 +13,23 @@ def get_by_nm_usuario(db: Session, nm_usuario: str) -> Usuario | None:
     return db.scalars(stmt).first()
 
 
+def list_all(db: Session) -> list[Usuario]:
+    return list(db.scalars(select(Usuario)).all())
+
+
 def create(db: Session, usuario: Usuario) -> Usuario:
     db.add(usuario)
     db.commit()
     db.refresh(usuario)
     return usuario
+
+
+def update(db: Session, usuario: Usuario) -> Usuario:
+    db.commit()
+    db.refresh(usuario)
+    return usuario
+
+
+def delete(db: Session, usuario: Usuario) -> None:
+    db.delete(usuario)
+    db.commit()

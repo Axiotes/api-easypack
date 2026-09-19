@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user, require_roles
+from app.core.deps import get_current_user
 from app.database.session import get_db
 from app.models.pacote import Pacote
-from app.models.usuario import CargoUsuario, Usuario
+from app.models.usuario import Usuario
 from app.schemas.pacote import PacoteCreate, PacoteRead, PacoteUpdate
 from app.services import pacote_service
 
@@ -51,6 +51,6 @@ def atualizar_pacote(
 def excluir_pacote(
     pacote_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR, CargoUsuario.GERENTE_PROJETO)),
+    _: Usuario = Depends(get_current_user),
 ) -> None:
     pacote_service.delete_pacote(db, pacote_id)
