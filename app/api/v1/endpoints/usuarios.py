@@ -14,7 +14,7 @@ router = APIRouter()
 def cadastrar_usuario(
     data: UsuarioCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_roles(CargoUsuario.ADMIN)),
+    _: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR)),
 ) -> Usuario:
     return usuario_service.create_usuario(db, data)
 

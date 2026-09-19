@@ -51,6 +51,6 @@ def atualizar_pacote(
 def excluir_pacote(
     pacote_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(require_roles(CargoUsuario.ADMIN, CargoUsuario.GERENTE)),
+    _: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR, CargoUsuario.GERENTE_PROJETO)),
 ) -> None:
     pacote_service.delete_pacote(db, pacote_id)

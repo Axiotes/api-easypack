@@ -10,9 +10,13 @@ from app.database.base import Base
 
 
 class CargoUsuario(str, enum.Enum):
-    ADMIN = "ADMIN"
-    GERENTE = "GERENTE"
-    ANALISTA = "ANALISTA"
+    GERENTE_PROJETO = "GERENTE_PROJETO"
+    COORDENADOR = "COORDENADOR"
+    ESPECIALISTA = "ESPECIALISTA"
+    SENIOR = "SENIOR"
+    PLENO = "PLENO"
+    JUNIOR = "JUNIOR"
+    ESTAGIARIO = "ESTAGIARIO"
 
 
 class Usuario(Base):
