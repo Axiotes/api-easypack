@@ -1,26 +1,30 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.core.security import create_access_token
 from app.database.session import get_db
-from app.schemas.usuario import Token
+from app.schemas.usuario import LoginRequest, Token
 from app.services import usuario_service
 
 router = APIRouter()
 
 
-@router.post("/auth/login", response_model=Token)
+@router.post(
+    "/auth/login",
+    response_model=Token,
+    summary="Realiza o login de um usuário",
+    description="Recebe somente `nm_usuario` e `senha`. Em caso de sucesso, retorna um token JWT Bearer.",
+)
 def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
+    data: LoginRequest,
     db: Session = Depends(get_db),
 ) -> Token:
-    usuario = usuario_service.authenticate(db, form_data.username, form_data.password)
+    usuario = usuario_service.authenticate(db, data.nm_usuario, data.senha)
     if usuario is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuário ou senha inválidos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(subject=str(usuario.id))
-    return Token(access_token=access_token)
+    token = create_access_token(usuario.nm_usuario, usuario.cargo.value)
+    return Token(token=token)

@@ -1,19 +1,18 @@
-from collections.abc import Callable
-
 import jwt
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
 from app.database.session import get_db
-from app.models.usuario import CargoUsuario, Usuario
+from app.models.usuario import Usuario
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+bearer_scheme = HTTPBearer()
 
 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> Usuario:
     credentials_exception = HTTPException(
@@ -22,26 +21,15 @@ def get_current_user(
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = decode_access_token(token)
-        user_id = payload.get("sub")
-        if user_id is None:
+        payload = decode_access_token(credentials.credentials)
+        nm_usuario = payload.get("sub")
+        cargo = payload.get("cargo")
+        if not isinstance(nm_usuario, str) or not isinstance(cargo, str):
             raise credentials_exception
     except jwt.InvalidTokenError as exc:
         raise credentials_exception from exc
 
-    usuario = db.get(Usuario, int(user_id))
-    if usuario is None:
+    usuario = db.scalars(select(Usuario).where(Usuario.nm_usuario == nm_usuario)).first()
+    if usuario is None or usuario.cargo.value != cargo:
         raise credentials_exception
     return usuario
-
-
-def require_roles(*roles: CargoUsuario) -> Callable[[Usuario], Usuario]:
-    def dependency(current_user: Usuario = Depends(get_current_user)) -> Usuario:
-        if current_user.cargo not in roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Usuário sem permissão para executar esta ação",
-            )
-        return current_user
-
-    return dependency
