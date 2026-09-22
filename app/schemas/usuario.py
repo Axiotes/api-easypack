@@ -34,7 +34,7 @@ class UsuarioRead(BaseModel):
 
 class LoginRequest(BaseModel):
     nm_usuario: str = Field(min_length=3, max_length=100, examples=["maria.silva"])
-    senha: str = Field(min_length=6, max_length=100, examples=["admin123"])
+    senha: str = Field(min_length=0, max_length=100, examples=["admin123"])
 
 
 class Token(BaseModel):
