@@ -11,6 +11,7 @@ class Setor(Base):
 
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     nm_setor: Mapped[str] = mapped_column(String(255), nullable=False)
+    sg_setor: Mapped[str] = mapped_column(String(10), nullable=False, unique=True)
 
     subsetores: Mapped[list["Subsetor"]] = relationship(back_populates="setor")
     clientes: Mapped[list["Cliente"]] = relationship(back_populates="setor_atendimento")

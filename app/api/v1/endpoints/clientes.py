@@ -12,8 +12,12 @@ router = APIRouter()
 
 
 @router.post("/clientes", response_model=ClienteRead, status_code=status.HTTP_201_CREATED)
-def cadastrar_cliente(data: ClienteCreate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Cliente:
-    return cliente_service.create_cliente(db, data)
+def cadastrar_cliente(
+    data: ClienteCreate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Cliente:
+    return cliente_service.create_cliente(db, data, usuario_atual)
 
 
 @router.get("/clientes", response_model=list[ClienteRead])
@@ -27,10 +31,19 @@ def obter_cliente(cliente_id: int, db: Session = Depends(get_db), _: Usuario = D
 
 
 @router.put("/clientes/{cliente_id}", response_model=ClienteRead)
-def atualizar_cliente(cliente_id: int, data: ClienteUpdate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Cliente:
-    return cliente_service.update_cliente(db, cliente_id, data)
+def atualizar_cliente(
+    cliente_id: int,
+    data: ClienteUpdate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Cliente:
+    return cliente_service.update_cliente(db, cliente_id, data, usuario_atual)
 
 
 @router.delete("/clientes/{cliente_id}", status_code=status.HTTP_204_NO_CONTENT)
-def excluir_cliente(cliente_id: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> None:
-    cliente_service.delete_cliente(db, cliente_id)
+def excluir_cliente(
+    cliente_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> None:
+    cliente_service.delete_cliente(db, cliente_id, usuario_atual)

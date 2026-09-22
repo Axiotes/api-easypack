@@ -33,4 +33,6 @@ class Usuario(Base):
     subsetor: Mapped["Subsetor"] = relationship(back_populates="usuarios")
     produto: Mapped["Produto"] = relationship(back_populates="usuarios")
     clientes: Mapped[list["Cliente"]] = relationship(back_populates="usuario")
-    correcoes: Mapped[list["Correcao"]] = relationship(back_populates="usuario")
+    correcoes: Mapped[list["Correcao"]] = relationship(
+        back_populates="usuario", foreign_keys="[Correcao.id_usuario]"
+    )

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_roles
 from app.database.session import get_db
 from app.models.correcao import Correcao
-from app.models.usuario import Usuario
+from app.models.usuario import CargoUsuario, Usuario
 from app.schemas.correcao import CorrecaoCreate, CorrecaoRead, CorrecaoUpdate
 from app.services import correcao_service
 
@@ -31,6 +31,19 @@ def atualizar_correcao(correcao_id: int, data: CorrecaoUpdate, db: Session = Dep
     return correcao_service.update_correcao(db, correcao_id, data)
 
 
+@router.post("/correcoes/{correcao_id}/aprovar", response_model=CorrecaoRead)
+def aprovar_correcao(
+    correcao_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.aprovar_correcao(db, correcao_id, usuario_atual)
+
+
 @router.delete("/correcoes/{correcao_id}", status_code=status.HTTP_204_NO_CONTENT)
-def excluir_correcao(correcao_id: int, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> None:
-    correcao_service.delete_correcao(db, correcao_id)
+def excluir_correcao(
+    correcao_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR)),
+) -> None:
+    correcao_service.delete_correcao(db, correcao_id, usuario_atual)

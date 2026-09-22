@@ -11,7 +11,6 @@ class CorrecaoCreate(BaseModel):
     id_setor: int
     sn_mergeado: str | None = Field(default=None, pattern="^[SN]$")
     versao_correcao: str = Field(min_length=1, max_length=50)
-    sn_aprovado_code_review: str = Field(pattern="^[SN]$")
 
 
 class CorrecaoUpdate(BaseModel):
@@ -24,7 +23,6 @@ class CorrecaoUpdate(BaseModel):
     id_setor: int | None = None
     sn_mergeado: str | None = Field(default=None, pattern="^[SN]$")
     versao_correcao: str | None = Field(default=None, min_length=1, max_length=50)
-    sn_aprovado_code_review: str | None = Field(default=None, pattern="^[SN]$")
 
 
 class CorrecaoRead(BaseModel):
@@ -41,3 +39,4 @@ class CorrecaoRead(BaseModel):
     sn_mergeado: str | None
     versao_correcao: str
     sn_aprovado_code_review: str
+    id_usuario_aprovador: int | None

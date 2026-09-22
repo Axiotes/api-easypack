@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
-from app.core.deps import get_current_user
+from app.core.deps import get_current_user, require_roles
 from app.database.session import get_db
-from app.models.usuario import Usuario
+from app.models.usuario import CargoUsuario, Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
 from app.services import usuario_service
 
@@ -14,9 +14,9 @@ router = APIRouter()
 def cadastrar_usuario(
     data: UsuarioCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR)),
 ) -> Usuario:
-    return usuario_service.create_usuario(db, data)
+    return usuario_service.create_usuario(db, data, usuario_atual)
 
 
 @router.get("/usuarios", response_model=list[UsuarioRead])
@@ -46,15 +46,15 @@ def atualizar_usuario(
     usuario_id: int,
     data: UsuarioUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR)),
 ) -> Usuario:
-    return usuario_service.update_usuario(db, usuario_id, data)
+    return usuario_service.update_usuario(db, usuario_id, data, usuario_atual)
 
 
 @router.delete("/usuarios/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT)
 def excluir_usuario(
     usuario_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(require_roles(CargoUsuario.COORDENADOR)),
 ) -> None:
-    usuario_service.delete_usuario(db, usuario_id)
+    usuario_service.delete_usuario(db, usuario_id, usuario_atual)

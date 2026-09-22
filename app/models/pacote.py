@@ -16,5 +16,8 @@ class Pacote(Base):
     nm_pacote: Mapped[str] = mapped_column(String(255), nullable=False)
     sn_aprovado_usu: Mapped[str | None] = mapped_column(CHAR(1), nullable=True)
     sn_aprovado_gerente: Mapped[str] = mapped_column(CHAR(1), nullable=False)
+    id_usuario_aplicacao: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"), nullable=True)
+    id_usuario_aprovador_gerente: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"), nullable=True)
+    id_usuario_aprovador_par: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"), nullable=True)
 
     correcao: Mapped["Correcao"] = relationship(back_populates="pacotes")

@@ -1,13 +1,42 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.constantes import PRODUTOS_COM_ACESSO_A_PAGU, PRODUTO_PAGU, SG_SETOR_FABRICA
 from app.models.correcao import Correcao
-from app.repositories import correcao_repository
+from app.models.usuario import Usuario
+from app.repositories import correcao_repository, produto_repository, usuario_repository
 from app.schemas.correcao import CorrecaoCreate, CorrecaoUpdate
 
 
+def _validar_produto_usuario(db: Session, id_usuario: int, id_produto: int) -> None:
+    usuario = usuario_repository.get_by_id(db, id_usuario)
+    if usuario is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário responsável não encontrado")
+    produto = produto_repository.get_by_id(db, id_produto)
+    if produto is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produto não encontrado")
+
+    nm_produto_usuario = usuario.produto.nm_produto
+    nm_produto_correcao = produto.nm_produto
+
+    if nm_produto_usuario == nm_produto_correcao:
+        return
+    if nm_produto_correcao == PRODUTO_PAGU and nm_produto_usuario in PRODUTOS_COM_ACESSO_A_PAGU:
+        return
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail=(
+            f"Usuário do produto {nm_produto_usuario} não pode ser responsável por "
+            f"correções do produto {nm_produto_correcao}"
+        ),
+    )
+
+
 def create_correcao(db: Session, data: CorrecaoCreate) -> Correcao:
-    return correcao_repository.create(db, Correcao(**data.model_dump()))
+    _validar_produto_usuario(db, data.id_usuario, data.id_produto)
+    correcao = Correcao(**data.model_dump(), sn_aprovado_code_review="N")
+    return correcao_repository.create(db, correcao)
 
 
 def list_correcoes(db: Session) -> list[Correcao]:
@@ -23,10 +52,44 @@ def get_correcao(db: Session, correcao_id: int) -> Correcao:
 
 def update_correcao(db: Session, correcao_id: int, data: CorrecaoUpdate) -> Correcao:
     correcao = get_correcao(db, correcao_id)
-    for field, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+
+    if "id_usuario" in changes or "id_produto" in changes:
+        novo_usuario = changes.get("id_usuario", correcao.id_usuario)
+        novo_produto = changes.get("id_produto", correcao.id_produto)
+        _validar_produto_usuario(db, novo_usuario, novo_produto)
+
+    for field, value in changes.items():
         setattr(correcao, field, value)
     return correcao_repository.update(db, correcao)
 
 
-def delete_correcao(db: Session, correcao_id: int) -> None:
-    correcao_repository.delete(db, get_correcao(db, correcao_id))
+def aprovar_correcao(db: Session, correcao_id: int, usuario_atual: Usuario) -> Correcao:
+    correcao = get_correcao(db, correcao_id)
+
+    if usuario_atual.subsetor.setor.sg_setor != SG_SETOR_FABRICA:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas um usuário do setor Fábrica pode aprovar uma correção",
+        )
+    if usuario_atual.id_produto != correcao.id_produto:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="O usuário aprovador deve pertencer ao mesmo produto da correção",
+        )
+
+    correcao.sn_aprovado_code_review = "S"
+    correcao.id_usuario_aprovador = usuario_atual.id
+    return correcao_repository.update(db, correcao)
+
+
+def delete_correcao(db: Session, correcao_id: int, usuario_atual: Usuario) -> None:
+    correcao = get_correcao(db, correcao_id)
+
+    if usuario_atual.id_produto != correcao.id_produto:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Coordenador só pode deletar correções do seu próprio produto",
+        )
+
+    correcao_repository.delete(db, correcao)
