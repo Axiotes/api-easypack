@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends, status
+from typing import Annotated
+
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, require_roles
 from app.database.session import get_db
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
-from app.schemas.pacote import PacoteAplicarRequest, PacoteCreate, PacoteRead, PacoteUpdate
+from app.schemas.pacote import (
+    PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead,
+    PacoteCreate, PacoteRead, PacoteUpdate,
+)
 from app.services import pacote_service
 
 router = APIRouter()
@@ -26,6 +31,15 @@ def listar_pacotes(
     _: Usuario = Depends(get_current_user),
 ) -> list[Pacote]:
     return pacote_service.list_pacotes(db)
+
+
+@router.get("/pacotes/contagem", response_model=PacoteContagemRead)
+def contar_pacotes(
+    filtros: Annotated[PacoteContagemFiltros, Query()],
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> PacoteContagemRead:
+    return pacote_service.count_pacotes(db, filtros)
 
 
 @router.get("/pacotes/{pacote_id}", response_model=PacoteRead)

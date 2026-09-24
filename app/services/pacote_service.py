@@ -6,7 +6,10 @@ from app.core.constantes import SG_SETOR_FABRICA, SG_SETOR_SERVICOS_TECNICOS
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import pacote_repository, usuario_repository
-from app.schemas.pacote import PacoteAplicarRequest, PacoteCreate, PacoteUpdate
+from app.schemas.pacote import (
+    PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead, PacoteCreate, PacoteUpdate,
+)
+from app.services.cliente_service import get_cliente
 
 
 def create_pacote(db: Session, data: PacoteCreate) -> Pacote:
@@ -96,3 +99,8 @@ def aplicar_pacote(db: Session, pacote_id: int, usuario_atual: Usuario, data: Pa
     pacote.sn_aplicado = "S"
     pacote.id_usuario_aplicacao = usuario_atual.id
     return pacote_repository.update(db, pacote)
+
+
+def count_pacotes(db: Session, filtros: PacoteContagemFiltros) -> PacoteContagemRead:
+    get_cliente(db, filtros.id_cliente)
+    return PacoteContagemRead(**pacote_repository.count_by_cliente(db, **filtros.model_dump()))
