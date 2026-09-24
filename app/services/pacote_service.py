@@ -8,6 +8,7 @@ from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import pacote_repository, usuario_repository
 from app.schemas.pacote import (
     PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead, PacoteCreate, PacoteUpdate,
+    PacoteDetalhadoRead, PacoteListagemFiltros,
 )
 from app.services.cliente_service import get_cliente
 
@@ -104,3 +105,11 @@ def aplicar_pacote(db: Session, pacote_id: int, usuario_atual: Usuario, data: Pa
 def count_pacotes(db: Session, filtros: PacoteContagemFiltros) -> PacoteContagemRead:
     get_cliente(db, filtros.id_cliente)
     return PacoteContagemRead(**pacote_repository.count_by_cliente(db, **filtros.model_dump()))
+
+
+def list_pacotes_detalhados(db: Session, filtros: PacoteListagemFiltros) -> list[PacoteDetalhadoRead]:
+    get_cliente(db, filtros.id_cliente)
+    return [
+        PacoteDetalhadoRead(**row)
+        for row in pacote_repository.list_detailed_by_cliente(db, **filtros.model_dump())
+    ]

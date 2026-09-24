@@ -9,7 +9,7 @@ from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
 from app.schemas.pacote import (
     PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead,
-    PacoteCreate, PacoteRead, PacoteUpdate,
+    PacoteCreate, PacoteRead, PacoteUpdate, PacoteDetalhadoRead, PacoteListagemFiltros,
 )
 from app.services import pacote_service
 
@@ -40,6 +40,15 @@ def contar_pacotes(
     _: Usuario = Depends(get_current_user),
 ) -> PacoteContagemRead:
     return pacote_service.count_pacotes(db, filtros)
+
+
+@router.get("/pacotes/detalhados", response_model=list[PacoteDetalhadoRead])
+def listar_pacotes_detalhados(
+    filtros: Annotated[PacoteListagemFiltros, Query()],
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> list[PacoteDetalhadoRead]:
+    return pacote_service.list_pacotes_detalhados(db, filtros)
 
 
 @router.get("/pacotes/{pacote_id}", response_model=PacoteRead)

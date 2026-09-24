@@ -58,3 +58,25 @@ class PacoteContagemRead(BaseModel):
     total_pacotes: int
     total_aplicados: int
     total_pendentes: int
+
+
+class PacoteListagemFiltros(PacoteContagemFiltros):
+    skip: int = Field(default=0, ge=0)
+    limit: int = Field(default=100, ge=1)
+
+
+class PacoteDetalhadoRead(BaseModel):
+    id: int
+    id_correcao: int
+    nm_pacote: str
+    versao_correcao: str
+    id_produto: int
+    nm_produto: str
+    id_setor: int
+    nm_setor: str
+    sg_setor: str
+    ticket: str
+    ticket_bug: str | None
+    sn_mergeado: str | None
+    sn_aprovado_gerente: str
+    sn_aplicado: str
