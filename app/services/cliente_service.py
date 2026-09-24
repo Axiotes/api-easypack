@@ -32,8 +32,12 @@ def create_cliente(db: Session, data: ClienteCreate, usuario_atual: Usuario) -> 
     return cliente_repository.create(db, Cliente(**data.model_dump()))
 
 
-def list_clientes(db: Session) -> list[Cliente]:
-    return cliente_repository.list_all(db)
+def list_clientes(db: Session, skip: int = 0, limit: int = 100) -> list[Cliente]:
+    return cliente_repository.list_all(db, skip=skip, limit=limit)
+
+
+def search_clientes(db: Session, nome: str, skip: int = 0, limit: int = 100) -> list[Cliente]:
+    return cliente_repository.search_by_name(db, nome, skip=skip, limit=limit)
 
 
 def get_cliente(db: Session, cliente_id: int) -> Cliente:
