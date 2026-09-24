@@ -3,7 +3,6 @@ from collections.abc import Callable
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import decode_access_token
@@ -24,14 +23,14 @@ def get_current_user(
     )
     try:
         payload = decode_access_token(credentials.credentials)
-        nm_usuario = payload.get("sub")
+        id_usuario = payload.get("id_usuario")
         cargo = payload.get("cargo")
-        if not isinstance(nm_usuario, str) or not isinstance(cargo, str):
+        if type(id_usuario) is not int or id_usuario <= 0 or not isinstance(cargo, str):
             raise credentials_exception
     except jwt.InvalidTokenError as exc:
         raise credentials_exception from exc
 
-    usuario = db.scalars(select(Usuario).where(Usuario.nm_usuario == nm_usuario)).first()
+    usuario = db.get(Usuario, id_usuario)
     if usuario is None or usuario.cargo.value != cargo:
         raise credentials_exception
     return usuario

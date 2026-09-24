@@ -26,5 +26,5 @@ def login(
             detail="Usuário ou senha inválidos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    token = create_access_token(usuario.nm_usuario, usuario.cargo.value)
+    token = create_access_token(usuario.nm_usuario, usuario.cargo.value, id_usuario=usuario.id)
     return Token(token=token)

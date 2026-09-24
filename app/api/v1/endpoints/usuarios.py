@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_current_user, require_roles
 from app.database.session import get_db
 from app.models.usuario import CargoUsuario, Usuario
-from app.schemas.usuario import UsuarioCreate, UsuarioRead, UsuarioUpdate
+from app.schemas.usuario import UsuarioCreate, UsuarioLogadoRead, UsuarioRead, UsuarioUpdate
 from app.services import usuario_service
 
 router = APIRouter()
@@ -27,7 +27,12 @@ def listar_usuarios(
     return usuario_service.list_usuarios(db)
 
 
-@router.get("/usuarios/me", response_model=UsuarioRead)
+@router.get(
+    "/usuarios/me",
+    response_model=UsuarioLogadoRead,
+    summary="Obtém o usuário logado",
+    description="Consulta o usuário pelo id_usuario do JWT enviado no header Authorization: Bearer <token>.",
+)
 def obter_usuario_logado(current_user: Usuario = Depends(get_current_user)) -> Usuario:
     return current_user
 
