@@ -4,10 +4,21 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PacoteCreate(BaseModel):
-    id_correcao: int
+    model_config = ConfigDict(extra="forbid")
+
     tp_pacote: int
     nm_pacote: str = Field(min_length=1, max_length=255)
-    sn_aprovado_usu: str | None = Field(default=None, pattern="^[SN]$")
+    id_cliente: int = Field(gt=0)
+    id_produto: int = Field(gt=0)
+    ticket: str = Field(min_length=1, max_length=100)
+    versao_correcao: str = Field(min_length=1, max_length=50)
+    ticket_bug: str | None = Field(default=None, max_length=100)
+    merge: str | None = Field(default=None, max_length=255)
+    sn_mergeado: Literal["S", "N"] = "N"
+    sn_aplicado: Literal["N"] = "N"
+    sn_aprovado_gerente: Literal["N"] = "N"
+    sn_aprovado_usu: Literal["N"] = "N"
+    sn_aprovado_code_review: Literal["N"] = "N"
 
 
 class PacoteUpdate(BaseModel):

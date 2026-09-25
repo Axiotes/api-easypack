@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.constantes import PRODUTOS_COM_ACESSO_A_PAGU, PRODUTO_PAGU, SG_SETOR_FABRICA
 from app.models.correcao import Correcao
+from app.models.produto import Produto
 from app.models.usuario import Usuario
 from app.repositories import correcao_repository, produto_repository, usuario_repository
 from app.schemas.correcao import CorrecaoCreate, CorrecaoUpdate
@@ -16,6 +17,10 @@ def _validar_produto_usuario(db: Session, id_usuario: int, id_produto: int) -> N
     if produto is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produto não encontrado")
 
+    validar_acesso_produto(usuario, produto)
+
+
+def validar_acesso_produto(usuario: Usuario, produto: Produto) -> None:
     nm_produto_usuario = usuario.produto.nm_produto
     nm_produto_correcao = produto.nm_produto
 
@@ -25,7 +30,7 @@ def _validar_produto_usuario(db: Session, id_usuario: int, id_produto: int) -> N
         return
 
     raise HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_403_FORBIDDEN,
         detail=(
             f"Usuário do produto {nm_produto_usuario} não pode ser responsável por "
             f"correções do produto {nm_produto_correcao}"

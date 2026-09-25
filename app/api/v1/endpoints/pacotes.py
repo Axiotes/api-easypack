@@ -17,13 +17,17 @@ from app.services import pacote_service
 router = APIRouter()
 
 
-@router.post("/pacotes", response_model=PacoteRead, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/pacotes", response_model=PacoteRead, status_code=status.HTTP_201_CREATED,
+    summary="Cadastra um pacote e sua correção",
+    description="Cria ambos em uma transação. Usuário e setor vêm do JWT; aprovações e aplicação começam em N.",
+)
 def cadastrar_pacote(
     data: PacoteCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> Pacote:
-    return pacote_service.create_pacote(db, data)
+    return pacote_service.create_pacote(db, data, usuario_atual)
 
 
 @router.get("/pacotes", response_model=list[PacoteRead])

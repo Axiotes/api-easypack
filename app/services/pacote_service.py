@@ -3,19 +3,36 @@ from sqlalchemy.orm import Session
 
 from app.core.cargo import cargo_pelo_menos
 from app.core.constantes import SG_SETOR_FABRICA, SG_SETOR_SERVICOS_TECNICOS
+from app.models.correcao import Correcao
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
-from app.repositories import pacote_repository, usuario_repository
+from app.repositories import pacote_repository, produto_repository, usuario_repository
 from app.schemas.pacote import (
     PacoteCompletoRead,
     PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead, PacoteCreate, PacoteUpdate,
     PacoteDetalhadoRead, PacoteListagemFiltros,
 )
 from app.services.cliente_service import get_cliente
+from app.services.correcao_service import validar_acesso_produto
 
 
-def create_pacote(db: Session, data: PacoteCreate) -> Pacote:
-    pacote = Pacote(**data.model_dump(), sn_aplicado="N", sn_aprovado_gerente="N")
+def create_pacote(db: Session, data: PacoteCreate, usuario_atual: Usuario) -> Pacote:
+    get_cliente(db, data.id_cliente)
+    produto = produto_repository.get_by_id(db, data.id_produto)
+    if produto is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Produto não encontrado")
+    validar_acesso_produto(usuario_atual, produto)
+    correcao = Correcao(
+        ticket=data.ticket, ticket_bug=data.ticket_bug, merge=data.merge,
+        id_cliente=data.id_cliente, id_produto=data.id_produto,
+        id_usuario=usuario_atual.id, id_setor=usuario_atual.subsetor.id_setor,
+        sn_mergeado=data.sn_mergeado, versao_correcao=data.versao_correcao,
+        sn_aprovado_code_review="N",
+    )
+    pacote = Pacote(
+        correcao=correcao, tp_pacote=data.tp_pacote, nm_pacote=data.nm_pacote,
+        sn_aplicado="N", sn_aprovado_gerente="N", sn_aprovado_usu="N",
+    )
     return pacote_repository.create(db, pacote)
 
 
@@ -43,6 +60,11 @@ def delete_pacote(db: Session, pacote_id: int) -> None:
 
 
 def aprovar_pacote_gerente(db: Session, pacote_id: int, usuario_atual: Usuario) -> Pacote:
+    if usuario_atual.cargo != CargoUsuario.GERENTE_PROJETO:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas Gerente de Projeto pode aprovar um pacote",
+        )
     pacote = get_pacote(db, pacote_id)
     pacote.sn_aprovado_gerente = "S"
     pacote.id_usuario_aprovador_gerente = usuario_atual.id
@@ -59,6 +81,8 @@ def aplicar_pacote(db: Session, pacote_id: int, usuario_atual: Usuario, data: Pa
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Pacote ainda não foi aprovado pelo Gerente de Projeto",
         )
+
+    validar_acesso_produto(usuario_atual, pacote.correcao.produto)
 
     cliente = pacote.correcao.cliente
     sg_setor_usuario = usuario_atual.subsetor.setor.sg_setor

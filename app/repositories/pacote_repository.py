@@ -1,4 +1,5 @@
 from sqlalchemy import Select, case, func, select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, aliased
 
 from app.models.cliente import Cliente
@@ -18,8 +19,13 @@ def list_all(db: Session) -> list[Pacote]:
 
 
 def create(db: Session, pacote: Pacote) -> Pacote:
-    db.add(pacote)
-    db.commit()
+    # O relacionamento salva a correção e o pacote na mesma transação.
+    try:
+        db.add(pacote)
+        db.commit()
+    except SQLAlchemyError:
+        db.rollback()
+        raise
     db.refresh(pacote)
     return pacote
 
