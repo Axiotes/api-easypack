@@ -8,6 +8,7 @@ from app.database.session import get_db
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
 from app.schemas.pacote import (
+    PacoteCompletoRead,
     PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead,
     PacoteCreate, PacoteRead, PacoteUpdate, PacoteDetalhadoRead, PacoteListagemFiltros,
 )
@@ -49,6 +50,23 @@ def listar_pacotes_detalhados(
     _: Usuario = Depends(get_current_user),
 ) -> list[PacoteDetalhadoRead]:
     return pacote_service.list_pacotes_detalhados(db, filtros)
+
+
+@router.get(
+    "/pacotes/{pacote_id}/detalhes",
+    response_model=PacoteCompletoRead,
+    summary="Obtém todos os dados do pacote e da correção",
+    description=(
+        "Retorna os IDs do pacote e da correção e os demais campos de ambos. "
+        "As outras referências id_* retornam nomes, incluindo o nome completo dos usuários."
+    ),
+)
+def obter_pacote_completo(
+    pacote_id: int,
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> PacoteCompletoRead:
+    return pacote_service.get_pacote_completo(db, pacote_id)
 
 
 @router.get("/pacotes/{pacote_id}", response_model=PacoteRead)

@@ -80,3 +80,27 @@ class PacoteDetalhadoRead(BaseModel):
     sn_mergeado: str | None
     sn_aprovado_gerente: str
     sn_aplicado: str
+
+
+class PacoteCompletoRead(BaseModel):
+    id: int
+    id_correcao: int
+    tp_pacote: int
+    nm_pacote: str
+    sn_aplicado: str
+    sn_aprovado_usu: str | None
+    sn_aprovado_gerente: str
+    id_usuario_aplicacao: str | None = Field(description="Nome completo do usuário que aplicou o pacote")
+    id_usuario_aprovador_gerente: str | None = Field(description="Nome completo do gerente aprovador")
+    id_usuario_aprovador_par: str | None = Field(description="Nome completo do aprovador par")
+    ticket: str
+    ticket_bug: str | None
+    merge: str | None
+    id_cliente: str = Field(description="Nome do cliente da correção")
+    id_produto: str = Field(description="Nome do produto da correção")
+    id_usuario: str = Field(description="Nome completo do usuário da correção")
+    id_setor: str = Field(description="Nome do setor da correção")
+    sn_mergeado: str | None
+    versao_correcao: str
+    sn_aprovado_code_review: str
+    id_usuario_aprovador: str | None = Field(description="Nome completo do aprovador da correção")

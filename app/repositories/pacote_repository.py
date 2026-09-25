@@ -1,10 +1,12 @@
 from sqlalchemy import Select, case, func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
+from app.models.cliente import Cliente
 from app.models.correcao import Correcao
 from app.models.pacote import Pacote
 from app.models.produto import Produto
 from app.models.setor import Setor
+from app.models.usuario import Usuario
 
 
 def get_by_id(db: Session, pacote_id: int) -> Pacote | None:
@@ -134,3 +136,40 @@ def list_detailed_by_cliente(
     )
     statement = statement.order_by(Pacote.id).offset(skip).limit(limit)
     return [dict(row) for row in db.execute(statement).mappings().all()]
+
+
+def get_complete_by_id(db: Session, pacote_id: int) -> dict | None:
+    usuario_correcao = aliased(Usuario)
+    usuario_aprovador = aliased(Usuario)
+    usuario_aplicacao = aliased(Usuario)
+    usuario_gerente = aliased(Usuario)
+    usuario_par = aliased(Usuario)
+    statement = (
+        select(
+            Pacote.id, Pacote.id_correcao, Pacote.tp_pacote, Pacote.nm_pacote,
+            Pacote.sn_aplicado, Pacote.sn_aprovado_usu, Pacote.sn_aprovado_gerente,
+            usuario_aplicacao.nm_completo.label("id_usuario_aplicacao"),
+            usuario_gerente.nm_completo.label("id_usuario_aprovador_gerente"),
+            usuario_par.nm_completo.label("id_usuario_aprovador_par"),
+            Correcao.ticket, Correcao.ticket_bug, Correcao.merge,
+            Cliente.nm_cliente.label("id_cliente"),
+            Produto.nm_produto.label("id_produto"),
+            usuario_correcao.nm_completo.label("id_usuario"),
+            Setor.nm_setor.label("id_setor"),
+            Correcao.sn_mergeado, Correcao.versao_correcao, Correcao.sn_aprovado_code_review,
+            usuario_aprovador.nm_completo.label("id_usuario_aprovador"),
+        )
+        .select_from(Pacote)
+        .join(Correcao, Pacote.id_correcao == Correcao.id)
+        .join(Cliente, Correcao.id_cliente == Cliente.id)
+        .join(Produto, Correcao.id_produto == Produto.id)
+        .join(Setor, Correcao.id_setor == Setor.id)
+        .join(usuario_correcao, Correcao.id_usuario == usuario_correcao.id)
+        .outerjoin(usuario_aprovador, Correcao.id_usuario_aprovador == usuario_aprovador.id)
+        .outerjoin(usuario_aplicacao, Pacote.id_usuario_aplicacao == usuario_aplicacao.id)
+        .outerjoin(usuario_gerente, Pacote.id_usuario_aprovador_gerente == usuario_gerente.id)
+        .outerjoin(usuario_par, Pacote.id_usuario_aprovador_par == usuario_par.id)
+        .where(Pacote.id == pacote_id)
+    )
+    row = db.execute(statement).mappings().one_or_none()
+    return dict(row) if row is not None else None

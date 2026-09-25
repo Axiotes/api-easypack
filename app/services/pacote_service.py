@@ -7,6 +7,7 @@ from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import pacote_repository, usuario_repository
 from app.schemas.pacote import (
+    PacoteCompletoRead,
     PacoteAplicarRequest, PacoteContagemFiltros, PacoteContagemRead, PacoteCreate, PacoteUpdate,
     PacoteDetalhadoRead, PacoteListagemFiltros,
 )
@@ -113,3 +114,10 @@ def list_pacotes_detalhados(db: Session, filtros: PacoteListagemFiltros) -> list
         PacoteDetalhadoRead(**row)
         for row in pacote_repository.list_detailed_by_cliente(db, **filtros.model_dump())
     ]
+
+
+def get_pacote_completo(db: Session, pacote_id: int) -> PacoteCompletoRead:
+    pacote = pacote_repository.get_complete_by_id(db, pacote_id)
+    if pacote is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pacote não encontrado")
+    return PacoteCompletoRead(**pacote)
