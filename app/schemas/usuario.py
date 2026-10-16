@@ -9,7 +9,10 @@ class UsuarioCreate(BaseModel):
     senha: str = Field(min_length=6, max_length=100)
     cargo: CargoUsuario
     id_subsetor: int
-    id_produto: int
+    id_produto: int | None = Field(
+        default=None,
+        description="Obrigatório para todos os cargos, exceto Gerente de Projeto.",
+    )
 
 
 class UsuarioUpdate(BaseModel):
@@ -29,7 +32,7 @@ class UsuarioRead(BaseModel):
     nm_completo: str
     cargo: CargoUsuario
     id_subsetor: int
-    id_produto: int
+    id_produto: int | None
 
 
 class LoginRequest(BaseModel):

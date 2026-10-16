@@ -26,12 +26,12 @@ class Usuario(Base):
     nm_usuario: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
     id_subsetor: Mapped[int] = mapped_column(BigInteger, ForeignKey("subsetor.id"), nullable=False)
     cargo: Mapped[CargoUsuario] = mapped_column(SAEnum(CargoUsuario, name="cargo_usuario"), nullable=False)
-    id_produto: Mapped[int] = mapped_column(BigInteger, ForeignKey("produto.id"), nullable=False)
+    id_produto: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("produto.id"), nullable=True)
     senha: Mapped[str] = mapped_column(String(255), nullable=False)
     nm_completo: Mapped[str] = mapped_column(String(255), nullable=False)
 
     subsetor: Mapped["Subsetor"] = relationship(back_populates="usuarios")
-    produto: Mapped["Produto"] = relationship(back_populates="usuarios")
+    produto: Mapped["Produto | None"] = relationship(back_populates="usuarios")
     clientes: Mapped[list["Cliente"]] = relationship(back_populates="usuario")
     correcoes: Mapped[list["Correcao"]] = relationship(
         back_populates="usuario", foreign_keys="[Correcao.id_usuario]"

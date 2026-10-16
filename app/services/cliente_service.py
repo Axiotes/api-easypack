@@ -7,11 +7,11 @@ from app.repositories import cliente_repository, usuario_repository
 from app.schemas.cliente import ClienteCreate, ClienteUpdate
 
 
-def _validar_coordenador_gerencia(usuario_atual: Usuario) -> None:
-    if usuario_atual.cargo != CargoUsuario.COORDENADOR or usuario_atual.subsetor.sn_gerencia != "S":
+def _validar_gerente_projeto(usuario_atual: Usuario) -> None:
+    if usuario_atual.cargo != CargoUsuario.GERENTE_PROJETO:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Apenas um coordenador do subsetor Gerência pode gerenciar clientes",
+            detail="Apenas um Gerente de Projeto pode gerenciar clientes",
         )
 
 
@@ -27,7 +27,7 @@ def _validar_responsavel_gerente_projeto(db: Session, id_usuario: int) -> None:
 
 
 def create_cliente(db: Session, data: ClienteCreate, usuario_atual: Usuario) -> Cliente:
-    _validar_coordenador_gerencia(usuario_atual)
+    _validar_gerente_projeto(usuario_atual)
     _validar_responsavel_gerente_projeto(db, data.id_usuario)
     return cliente_repository.create(db, Cliente(**data.model_dump()))
 
@@ -44,7 +44,7 @@ def get_cliente(db: Session, cliente_id: int) -> Cliente:
 
 
 def update_cliente(db: Session, cliente_id: int, data: ClienteUpdate, usuario_atual: Usuario) -> Cliente:
-    _validar_coordenador_gerencia(usuario_atual)
+    _validar_gerente_projeto(usuario_atual)
     cliente = get_cliente(db, cliente_id)
 
     changes = data.model_dump(exclude_unset=True)
@@ -57,5 +57,5 @@ def update_cliente(db: Session, cliente_id: int, data: ClienteUpdate, usuario_at
 
 
 def delete_cliente(db: Session, cliente_id: int, usuario_atual: Usuario) -> None:
-    _validar_coordenador_gerencia(usuario_atual)
+    _validar_gerente_projeto(usuario_atual)
     cliente_repository.delete(db, get_cliente(db, cliente_id))

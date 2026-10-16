@@ -22,9 +22,9 @@ def cadastrar_usuario(
 @router.get("/usuarios", response_model=list[UsuarioRead])
 def listar_usuarios(
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> list[Usuario]:
-    return usuario_service.list_usuarios(db)
+    return usuario_service.list_usuarios(db, usuario_atual)
 
 
 @router.get("/usuarios/me", response_model=UsuarioRead)

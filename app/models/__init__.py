@@ -4,6 +4,7 @@ from app.models.pacote import Pacote
 from app.models.produto import Produto
 from app.models.setor import Setor
 from app.models.subsetor import Subsetor
+from app.models.tipo_pacote import TipoPacote
 from app.models.usuario import CargoUsuario, Usuario
 
 __all__ = [
@@ -14,5 +15,6 @@ __all__ = [
     "Produto",
     "Setor",
     "Subsetor",
+    "TipoPacote",
     "Usuario",
 ]

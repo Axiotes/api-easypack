@@ -6,3 +6,4 @@ class ProdutoRead(BaseModel):
 
     id: int
     nm_produto: str
+    nm_grupo_tipo_pacote: str

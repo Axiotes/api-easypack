@@ -21,8 +21,11 @@ class CorrecaoUpdate(BaseModel):
     id_produto: int | None = None
     id_usuario: int | None = None
     id_setor: int | None = None
-    sn_mergeado: str | None = Field(default=None, pattern="^[SN]$")
     versao_correcao: str | None = Field(default=None, min_length=1, max_length=50)
+
+
+class CorrecaoMergeRequest(BaseModel):
+    sn_mergeado: str = Field(pattern="^[SN]$")
 
 
 class CorrecaoRead(BaseModel):
