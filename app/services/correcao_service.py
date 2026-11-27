@@ -5,6 +5,7 @@ from app.core.cargo import CARGOS_APROVACAO_CODE_REVIEW
 from app.core.constantes import SG_SETOR_FABRICA
 from app.core.produto import produto_atende
 from app.models.correcao import Correcao
+from app.models.produto import Produto
 from app.models.usuario import Usuario
 from app.repositories import correcao_repository, produto_repository, usuario_repository
 from app.schemas.correcao import CorrecaoCreate, CorrecaoMergeRequest, CorrecaoUpdate

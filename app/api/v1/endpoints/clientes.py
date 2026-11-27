@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
@@ -21,8 +21,24 @@ def cadastrar_cliente(
 
 
 @router.get("/clientes", response_model=list[ClienteRead])
-def listar_clientes(db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> list[Cliente]:
-    return cliente_service.list_clientes(db)
+def listar_clientes(
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> list[Cliente]:
+    return cliente_service.list_clientes(db, skip=skip, limit=limit)
+
+
+@router.get("/clientes/busca", response_model=list[ClienteRead])
+def buscar_clientes(
+    nome: str = Query(min_length=1, max_length=255),
+    skip: int = Query(default=0, ge=0),
+    limit: int = Query(default=100, ge=1),
+    db: Session = Depends(get_db),
+    _: Usuario = Depends(get_current_user),
+) -> list[Cliente]:
+    return cliente_service.search_clientes(db, nome, skip=skip, limit=limit)
 
 
 @router.get("/clientes/{cliente_id}", response_model=ClienteRead)
