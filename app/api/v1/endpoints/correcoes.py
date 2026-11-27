@@ -5,7 +5,7 @@ from app.core.deps import get_current_user, require_roles
 from app.database.session import get_db
 from app.models.correcao import Correcao
 from app.models.usuario import CargoUsuario, Usuario
-from app.schemas.correcao import CorrecaoCreate, CorrecaoRead, CorrecaoUpdate
+from app.schemas.correcao import CorrecaoCreate, CorrecaoMergeRequest, CorrecaoRead, CorrecaoUpdate
 from app.services import correcao_service
 
 router = APIRouter()
@@ -38,6 +38,16 @@ def aprovar_correcao(
     usuario_atual: Usuario = Depends(get_current_user),
 ) -> Correcao:
     return correcao_service.aprovar_correcao(db, correcao_id, usuario_atual)
+
+
+@router.post("/correcoes/{correcao_id}/merge", response_model=CorrecaoRead)
+def alterar_mergeado_correcao(
+    correcao_id: int,
+    data: CorrecaoMergeRequest,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.alterar_mergeado(db, correcao_id, usuario_atual, data)
 
 
 @router.delete("/correcoes/{correcao_id}", status_code=status.HTTP_204_NO_CONTENT)

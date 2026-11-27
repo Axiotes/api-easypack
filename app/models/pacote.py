@@ -12,7 +12,7 @@ class Pacote(Base):
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     id_correcao: Mapped[int] = mapped_column(BigInteger, ForeignKey("correcao.id"), nullable=False)
     sn_aplicado: Mapped[str] = mapped_column(CHAR(1), nullable=False)
-    tp_pacote: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    tp_pacote: Mapped[int] = mapped_column(BigInteger, ForeignKey("tipo_pacote.id"), nullable=False)
     nm_pacote: Mapped[str] = mapped_column(String(255), nullable=False)
     sn_aprovado_usu: Mapped[str | None] = mapped_column(CHAR(1), nullable=True)
     sn_aprovado_gerente: Mapped[str] = mapped_column(CHAR(1), nullable=False)
@@ -21,3 +21,4 @@ class Pacote(Base):
     id_usuario_aprovador_par: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"), nullable=True)
 
     correcao: Mapped["Correcao"] = relationship(back_populates="pacotes")
+    tipo_pacote: Mapped["TipoPacote"] = relationship(back_populates="pacotes")

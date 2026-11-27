@@ -9,6 +9,7 @@ from app.api.v1.endpoints.pacotes import router as pacotes_router
 from app.api.v1.endpoints.produtos import router as produtos_router
 from app.api.v1.endpoints.setores import router as setores_router
 from app.api.v1.endpoints.subsetores import router as subsetores_router
+from app.api.v1.endpoints.tipos_pacote import router as tipos_pacote_router
 from app.api.v1.endpoints.usuarios import router as usuarios_router
 
 router = APIRouter()
@@ -61,4 +62,9 @@ router.include_router(
 router.include_router(
     cargos_router,
     tags=["Cargos"]
+)
+
+router.include_router(
+    tipos_pacote_router,
+    tags=["Tipos de Pacote"]
 )

@@ -22,3 +22,20 @@ def cargo_pelo_menos(cargo: CargoUsuario, minimo: CargoUsuario) -> bool:
 
 def cargo_abaixo_de(cargo: CargoUsuario, referencia: CargoUsuario) -> bool:
     return cargo_rank(cargo) > cargo_rank(referencia)
+
+
+# Cargos "dev" (execução técnica): podem aprovar o code review de uma correção do seu produto.
+CARGOS_APROVACAO_CODE_REVIEW: tuple[CargoUsuario, ...] = (
+    CargoUsuario.ESPECIALISTA,
+    CargoUsuario.SENIOR,
+    CargoUsuario.PLENO,
+    CargoUsuario.JUNIOR,
+)
+
+# Cargos elegíveis para aprovar a aplicação de um pacote por um usuário Estagiário.
+CARGOS_APROVADOR_PAR_ESTAGIARIO: tuple[CargoUsuario, ...] = (
+    CargoUsuario.COORDENADOR,
+    CargoUsuario.ESPECIALISTA,
+    CargoUsuario.SENIOR,
+    CargoUsuario.PLENO,
+)
