@@ -1,13 +1,38 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core.cargo import cargo_abaixo_de
 from app.core.security import hash_password, verify_password
-from app.models.usuario import Usuario
+from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import usuario_repository
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
 
 
-def create_usuario(db: Session, data: UsuarioCreate) -> Usuario:
+def _validar_gestao_coordenador(usuario_atual: Usuario, id_subsetor: int, cargo: CargoUsuario) -> None:
+    if id_subsetor != usuario_atual.id_subsetor:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Coordenador só pode gerenciar usuários do próprio subsetor",
+        )
+    if not cargo_abaixo_de(cargo, CargoUsuario.COORDENADOR):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Coordenador só pode gerenciar usuários com cargo abaixo de Coordenador",
+        )
+
+
+def _validar_produto_obrigatorio(cargo: CargoUsuario, id_produto: int | None) -> None:
+    if cargo != CargoUsuario.GERENTE_PROJETO and id_produto is None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Produto é obrigatório para usuários que não são Gerente de Projeto",
+        )
+
+
+def create_usuario(db: Session, data: UsuarioCreate, usuario_atual: Usuario) -> Usuario:
+    _validar_gestao_coordenador(usuario_atual, data.id_subsetor, data.cargo)
+    _validar_produto_obrigatorio(data.cargo, data.id_produto)
+
     if usuario_repository.get_by_nm_usuario(db, data.nm_usuario) is not None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -25,8 +50,11 @@ def create_usuario(db: Session, data: UsuarioCreate) -> Usuario:
     return usuario_repository.create(db, usuario)
 
 
-def list_usuarios(db: Session) -> list[Usuario]:
-    return usuario_repository.list_all(db)
+def list_usuarios(db: Session, usuario_atual: Usuario) -> list[Usuario]:
+    usuarios = usuario_repository.list_all(db)
+    if usuario_atual.cargo == CargoUsuario.COORDENADOR:
+        return [usuario for usuario in usuarios if usuario.id_subsetor == usuario_atual.id_subsetor]
+    return usuarios
 
 
 def get_usuario(db: Session, usuario_id: int) -> Usuario:
@@ -36,9 +64,18 @@ def get_usuario(db: Session, usuario_id: int) -> Usuario:
     return usuario
 
 
-def update_usuario(db: Session, usuario_id: int, data: UsuarioUpdate) -> Usuario:
+def update_usuario(db: Session, usuario_id: int, data: UsuarioUpdate, usuario_atual: Usuario) -> Usuario:
     usuario = get_usuario(db, usuario_id)
+    _validar_gestao_coordenador(usuario_atual, usuario.id_subsetor, usuario.cargo)
+
     changes = data.model_dump(exclude_unset=True)
+
+    novo_subsetor = changes.get("id_subsetor", usuario.id_subsetor)
+    novo_cargo = changes.get("cargo", usuario.cargo)
+    _validar_gestao_coordenador(usuario_atual, novo_subsetor, novo_cargo)
+
+    novo_produto = changes.get("id_produto", usuario.id_produto)
+    _validar_produto_obrigatorio(novo_cargo, novo_produto)
 
     if "nm_usuario" in changes:
         existing = usuario_repository.get_by_nm_usuario(db, changes["nm_usuario"])
@@ -53,8 +90,10 @@ def update_usuario(db: Session, usuario_id: int, data: UsuarioUpdate) -> Usuario
     return usuario_repository.update(db, usuario)
 
 
-def delete_usuario(db: Session, usuario_id: int) -> None:
-    usuario_repository.delete(db, get_usuario(db, usuario_id))
+def delete_usuario(db: Session, usuario_id: int, usuario_atual: Usuario) -> None:
+    usuario = get_usuario(db, usuario_id)
+    _validar_gestao_coordenador(usuario_atual, usuario.id_subsetor, usuario.cargo)
+    usuario_repository.delete(db, usuario)
 
 
 def authenticate(db: Session, nm_usuario: str, senha: str) -> Usuario | None:

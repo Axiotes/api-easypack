@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasPath, BaseModel, ConfigDict, Field
 
 from app.models.usuario import CargoUsuario
 
@@ -9,7 +9,10 @@ class UsuarioCreate(BaseModel):
     senha: str = Field(min_length=6, max_length=100)
     cargo: CargoUsuario
     id_subsetor: int
-    id_produto: int
+    id_produto: int | None = Field(
+        default=None,
+        description="Obrigatório para todos os cargos, exceto Gerente de Projeto.",
+    )
 
 
 class UsuarioUpdate(BaseModel):
@@ -29,12 +32,23 @@ class UsuarioRead(BaseModel):
     nm_completo: str
     cargo: CargoUsuario
     id_subsetor: int
-    id_produto: int
+    id_produto: int | None
+
+
+class UsuarioLogadoRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nm_usuario: str
+    nm_completo: str
+    cargo: CargoUsuario
+    nm_subsetor: str = Field(validation_alias=AliasPath("subsetor", "nm_subsetor"))
+    nm_produto: str = Field(validation_alias=AliasPath("produto", "nm_produto"))
 
 
 class LoginRequest(BaseModel):
     nm_usuario: str = Field(min_length=3, max_length=100, examples=["maria.silva"])
-    senha: str = Field(min_length=6, max_length=100, examples=["admin123"])
+    senha: str = Field(min_length=0, max_length=100, examples=["admin123"])
 
 
 class Token(BaseModel):

@@ -20,9 +20,10 @@ class Correcao(Base):
     sn_mergeado: Mapped[str | None] = mapped_column(CHAR(1), nullable=True)
     versao_correcao: Mapped[str] = mapped_column(String(50), nullable=False)
     sn_aprovado_code_review: Mapped[str] = mapped_column(CHAR(1), nullable=False)
+    id_usuario_aprovador: Mapped[int | None] = mapped_column(BigInteger, ForeignKey("usuario.id"), nullable=True)
 
     cliente: Mapped["Cliente"] = relationship(back_populates="correcoes")
     produto: Mapped["Produto"] = relationship(back_populates="correcoes")
-    usuario: Mapped["Usuario"] = relationship(back_populates="correcoes")
+    usuario: Mapped["Usuario"] = relationship(back_populates="correcoes", foreign_keys=[id_usuario])
     setor: Mapped["Setor"] = relationship(back_populates="correcoes")
     pacotes: Mapped[list["Pacote"]] = relationship(back_populates="correcao")

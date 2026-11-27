@@ -11,6 +11,7 @@ class Produto(Base):
 
     id: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), primary_key=True)
     nm_produto: Mapped[str] = mapped_column(String(255), nullable=False)
+    nm_grupo_tipo_pacote: Mapped[str] = mapped_column(String(20), nullable=False)
 
     subsetores: Mapped[list["Subsetor"]] = relationship(back_populates="produto")
     usuarios: Mapped[list["Usuario"]] = relationship(back_populates="produto")
