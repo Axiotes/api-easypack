@@ -33,7 +33,12 @@ def listar_usuarios(
     return usuarios
 
 
-@router.get("/usuarios/me", response_model=UsuarioRead)
+@router.get(
+    "/usuarios/me",
+    response_model=UsuarioRead,
+    summary="Obtém o usuário logado",
+    description="Consulta o usuário pelo id_usuario do JWT enviado no header Authorization: Bearer <token>.",
+)
 def obter_usuario_logado(current_user: Usuario = Depends(get_current_user)) -> Usuario:
     return current_user
 
