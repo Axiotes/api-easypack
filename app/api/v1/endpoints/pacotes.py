@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, require_roles
+from app.core.opencl_utils import checksum_gpu
 from app.database.session import get_db
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
@@ -22,10 +23,15 @@ def cadastrar_pacote(
 
 @router.get("/pacotes", response_model=list[PacoteRead])
 def listar_pacotes(
+    response: Response,
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ) -> list[Pacote]:
-    return pacote_service.list_pacotes(db)
+    pacotes = pacote_service.list_pacotes(db)
+    checksum = checksum_gpu([pacote.id for pacote in pacotes])
+    if checksum is not None:
+        response.headers["X-GPU-Checksum"] = str(checksum)
+    return pacotes
 
 
 @router.get("/pacotes/{pacote_id}", response_model=PacoteRead)

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, require_roles
+from app.core.opencl_utils import checksum_gpu
 from app.database.session import get_db
 from app.models.correcao import Correcao
 from app.models.usuario import CargoUsuario, Usuario
@@ -21,8 +22,12 @@ def cadastrar_correcao(
 
 
 @router.get("/correcoes", response_model=list[CorrecaoRead])
-def listar_correcoes(db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> list[Correcao]:
-    return correcao_service.list_correcoes(db)
+def listar_correcoes(response: Response, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> list[Correcao]:
+    correcoes = correcao_service.list_correcoes(db)
+    checksum = checksum_gpu([correcao.id for correcao in correcoes])
+    if checksum is not None:
+        response.headers["X-GPU-Checksum"] = str(checksum)
+    return correcoes
 
 
 @router.get("/correcoes/{correcao_id}", response_model=CorrecaoRead)

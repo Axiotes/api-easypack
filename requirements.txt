@@ -9,3 +9,5 @@ bcrypt==4.2.1
 PyJWT==2.10.1
 python-multipart==0.0.20
 cryptography==50.0.2
+pyopencl==2026.1.5
+numpy==2.5.5
