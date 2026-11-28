@@ -98,6 +98,11 @@ def alterar_mergeado(db: Session, correcao_id: int, usuario_atual: Usuario, data
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Usuário só pode alterar o status de merge de correções do próprio setor",
         )
+    if data.sn_mergeado == "S" and correcao.sn_aprovado_code_review != "S":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Não é possível marcar a correção como mergeada sem o code review aprovado",
+        )
 
     correcao.sn_mergeado = data.sn_mergeado
     return correcao_repository.update(db, correcao)
