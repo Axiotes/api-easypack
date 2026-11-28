@@ -18,18 +18,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("cliente", sa.Column("estado", sa.String(length=2), nullable=True))
-    op.add_column(
-        "cliente",
-        sa.Column(
-            "status_ambiente",
-            sa.Enum("PRE-PROD", "PRD", name="status_ambiente_cliente", create_constraint=True),
-            nullable=False,
-            server_default="PRE-PROD",
-        ),
-    )
+    colunas = {coluna["name"] for coluna in sa.inspect(op.get_bind()).get_columns("cliente")}
+
+    if "estado" not in colunas:
+        op.add_column("cliente", sa.Column("estado", sa.String(length=2), nullable=True))
+    if "status_ambiente" not in colunas:
+        op.add_column(
+            "cliente",
+            sa.Column(
+                "status_ambiente",
+                sa.Enum("PRE-PROD", "PRD", name="status_ambiente_cliente", create_constraint=True),
+                nullable=False,
+                server_default="PRE-PROD",
+            ),
+        )
 
 
 def downgrade() -> None:
-    op.drop_column("cliente", "status_ambiente")
-    op.drop_column("cliente", "estado")
+    colunas = {coluna["name"] for coluna in sa.inspect(op.get_bind()).get_columns("cliente")}
+
+    if "status_ambiente" in colunas:
+        op.drop_column("cliente", "status_ambiente")
+    if "estado" in colunas:
+        op.drop_column("cliente", "estado")

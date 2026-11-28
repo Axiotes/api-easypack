@@ -36,3 +36,4 @@ class Usuario(Base):
     correcoes: Mapped[list["Correcao"]] = relationship(
         back_populates="usuario", foreign_keys="[Correcao.id_usuario]"
     )
+    notificacoes: Mapped[list["Notificacao"]] = relationship(back_populates="usuario")
