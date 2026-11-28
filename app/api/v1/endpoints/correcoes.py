@@ -12,8 +12,12 @@ router = APIRouter()
 
 
 @router.post("/correcoes", response_model=CorrecaoRead, status_code=status.HTTP_201_CREATED)
-def cadastrar_correcao(data: CorrecaoCreate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Correcao:
-    return correcao_service.create_correcao(db, data)
+def cadastrar_correcao(
+    data: CorrecaoCreate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.create_correcao(db, data, usuario_atual)
 
 
 @router.get("/correcoes", response_model=list[CorrecaoRead])
@@ -27,8 +31,13 @@ def obter_correcao(correcao_id: int, db: Session = Depends(get_db), _: Usuario =
 
 
 @router.put("/correcoes/{correcao_id}", response_model=CorrecaoRead)
-def atualizar_correcao(correcao_id: int, data: CorrecaoUpdate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Correcao:
-    return correcao_service.update_correcao(db, correcao_id, data)
+def atualizar_correcao(
+    correcao_id: int,
+    data: CorrecaoUpdate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.update_correcao(db, correcao_id, data, usuario_atual)
 
 
 @router.post("/correcoes/{correcao_id}/aprovar", response_model=CorrecaoRead)

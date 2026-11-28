@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core import auditoria
 from app.core.cargo import cargo_abaixo_de
 from app.core.security import hash_password, verify_password
 from app.models.usuario import CargoUsuario, Usuario
@@ -47,7 +48,12 @@ def create_usuario(db: Session, data: UsuarioCreate, usuario_atual: Usuario) -> 
         id_subsetor=data.id_subsetor,
         id_produto=data.id_produto,
     )
-    return usuario_repository.create(db, usuario)
+    usuario = usuario_repository.create(db, usuario)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_USUARIO, usuario.id, auditoria.ACAO_CRIAR,
+        f"Usuário {usuario.nm_usuario} cadastrado",
+    )
+    return usuario
 
 
 def list_usuarios(db: Session, usuario_atual: Usuario) -> list[Usuario]:
@@ -87,13 +93,23 @@ def update_usuario(db: Session, usuario_id: int, data: UsuarioUpdate, usuario_at
 
     for field, value in changes.items():
         setattr(usuario, field, value)
-    return usuario_repository.update(db, usuario)
+    usuario = usuario_repository.update(db, usuario)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_USUARIO, usuario.id, auditoria.ACAO_ATUALIZAR,
+        f"Usuário {usuario.nm_usuario} atualizado",
+    )
+    return usuario
 
 
 def delete_usuario(db: Session, usuario_id: int, usuario_atual: Usuario) -> None:
     usuario = get_usuario(db, usuario_id)
     _validar_gestao_coordenador(usuario_atual, usuario.id_subsetor, usuario.cargo)
+    usuario_id_registrado, nm_usuario_registrado = usuario.id, usuario.nm_usuario
     usuario_repository.delete(db, usuario)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_USUARIO, usuario_id_registrado, auditoria.ACAO_EXCLUIR,
+        f"Usuário {nm_usuario_registrado} excluído",
+    )
 
 
 def authenticate(db: Session, nm_usuario: str, senha: str) -> Usuario | None:

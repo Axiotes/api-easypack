@@ -15,9 +15,9 @@ router = APIRouter()
 def cadastrar_pacote(
     data: PacoteCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> Pacote:
-    return pacote_service.create_pacote(db, data)
+    return pacote_service.create_pacote(db, data, usuario_atual)
 
 
 @router.get("/pacotes", response_model=list[PacoteRead])
@@ -42,9 +42,9 @@ def atualizar_pacote(
     pacote_id: int,
     data: PacoteUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> Pacote:
-    return pacote_service.update_pacote(db, pacote_id, data)
+    return pacote_service.update_pacote(db, pacote_id, data, usuario_atual)
 
 
 @router.post("/pacotes/{pacote_id}/aprovar-gerente", response_model=PacoteRead)
@@ -70,6 +70,6 @@ def aplicar_pacote(
 def excluir_pacote(
     pacote_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> None:
-    pacote_service.delete_pacote(db, pacote_id)
+    pacote_service.delete_pacote(db, pacote_id, usuario_atual)
