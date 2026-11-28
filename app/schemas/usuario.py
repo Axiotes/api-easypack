@@ -1,4 +1,4 @@
-from pydantic import AliasPath, BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.usuario import CargoUsuario
 
@@ -33,17 +33,6 @@ class UsuarioRead(BaseModel):
     cargo: CargoUsuario
     id_subsetor: int
     id_produto: int | None
-
-
-class UsuarioLogadoRead(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    nm_usuario: str
-    nm_completo: str
-    cargo: CargoUsuario
-    nm_subsetor: str = Field(validation_alias=AliasPath("subsetor", "nm_subsetor"))
-    nm_produto: str = Field(validation_alias=AliasPath("produto", "nm_produto"))
 
 
 class LoginRequest(BaseModel):

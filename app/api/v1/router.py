@@ -5,7 +5,9 @@ from app.api.v1.endpoints.cargos import router as cargos_router
 from app.api.v1.endpoints.clientes import router as clientes_router
 from app.api.v1.endpoints.correcoes import router as correcoes_router
 from app.api.v1.endpoints.health import router as health_router
+from app.api.v1.endpoints.logs import router as logs_router
 from app.api.v1.endpoints.notificacoes import router as notificacoes_router
+from app.api.v1.endpoints.opencl import router as opencl_router
 from app.api.v1.endpoints.pacotes import router as pacotes_router
 from app.api.v1.endpoints.produtos import router as produtos_router
 from app.api.v1.endpoints.setores import router as setores_router
@@ -73,4 +75,14 @@ router.include_router(
 router.include_router(
     tipos_pacote_router,
     tags=["Tipos de Pacote"]
+)
+
+router.include_router(
+    logs_router,
+    tags=["Logs"]
+)
+
+router.include_router(
+    opencl_router,
+    tags=["OpenCL"]
 )

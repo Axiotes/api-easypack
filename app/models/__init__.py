@@ -1,5 +1,6 @@
 from app.models.cliente import Cliente
 from app.models.correcao import Correcao
+from app.models.log_operacao import LogOperacao
 from app.models.notificacao import Notificacao
 from app.models.pacote import Pacote
 from app.models.produto import Produto
@@ -12,6 +13,7 @@ __all__ = [
     "CargoUsuario",
     "Cliente",
     "Correcao",
+    "LogOperacao",
     "Notificacao",
     "Pacote",
     "Produto",

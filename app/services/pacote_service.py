@@ -1,13 +1,23 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core import auditoria
 from app.core.cargo import CARGOS_APROVADOR_PAR_ESTAGIARIO
 from app.core.constantes import SG_SETOR_FABRICA, SG_SETOR_SERVICOS_TECNICOS
 from app.core.produto import produto_atende
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import correcao_repository, pacote_repository, tipo_pacote_repository, usuario_repository
-from app.schemas.pacote import PacoteAplicarRequest, PacoteCreate, PacoteUpdate
+from app.schemas.pacote import (
+    PacoteAplicarRequest,
+    PacoteCompletoRead,
+    PacoteContagemFiltros,
+    PacoteContagemRead,
+    PacoteCreate,
+    PacoteDetalhadoRead,
+    PacoteListagemFiltros,
+    PacoteUpdate,
+)
 
 
 def _validar_tipo_pacote(db: Session, id_correcao: int, tp_pacote: int) -> None:
@@ -24,14 +34,36 @@ def _validar_tipo_pacote(db: Session, id_correcao: int, tp_pacote: int) -> None:
         )
 
 
-def create_pacote(db: Session, data: PacoteCreate) -> Pacote:
+def create_pacote(db: Session, data: PacoteCreate, usuario_atual: Usuario) -> Pacote:
     _validar_tipo_pacote(db, data.id_correcao, data.tp_pacote)
     pacote = Pacote(**data.model_dump(), sn_aplicado="N", sn_aprovado_gerente="N")
-    return pacote_repository.create(db, pacote)
+    pacote = pacote_repository.create(db, pacote)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_PACOTE, pacote.id, auditoria.ACAO_CRIAR,
+        f"Pacote {pacote.nm_pacote} cadastrado",
+    )
+    return pacote
 
 
 def list_pacotes(db: Session) -> list[Pacote]:
     return pacote_repository.list_all(db)
+
+
+def count_pacotes(db: Session, filtros: PacoteContagemFiltros) -> PacoteContagemRead:
+    resultado = pacote_repository.count_by_cliente(db, **filtros.model_dump())
+    return PacoteContagemRead(**resultado)
+
+
+def list_pacotes_detalhados(db: Session, filtros: PacoteListagemFiltros) -> list[PacoteDetalhadoRead]:
+    linhas = pacote_repository.list_detailed_by_cliente(db, **filtros.model_dump())
+    return [PacoteDetalhadoRead(**linha) for linha in linhas]
+
+
+def get_pacote_completo(db: Session, pacote_id: int) -> PacoteCompletoRead:
+    linha = pacote_repository.get_complete_by_id(db, pacote_id)
+    if linha is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Pacote não encontrado")
+    return PacoteCompletoRead(**linha)
 
 
 def get_pacote(db: Session, pacote_id: int) -> Pacote:
@@ -41,7 +73,7 @@ def get_pacote(db: Session, pacote_id: int) -> Pacote:
     return pacote
 
 
-def update_pacote(db: Session, pacote_id: int, data: PacoteUpdate) -> Pacote:
+def update_pacote(db: Session, pacote_id: int, data: PacoteUpdate, usuario_atual: Usuario) -> Pacote:
     pacote = get_pacote(db, pacote_id)
     changes = data.model_dump(exclude_unset=True)
 
@@ -50,12 +82,22 @@ def update_pacote(db: Session, pacote_id: int, data: PacoteUpdate) -> Pacote:
 
     for field, value in changes.items():
         setattr(pacote, field, value)
-    return pacote_repository.update(db, pacote)
+    pacote = pacote_repository.update(db, pacote)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_PACOTE, pacote.id, auditoria.ACAO_ATUALIZAR,
+        f"Pacote {pacote.nm_pacote} atualizado",
+    )
+    return pacote
 
 
-def delete_pacote(db: Session, pacote_id: int) -> None:
+def delete_pacote(db: Session, pacote_id: int, usuario_atual: Usuario) -> None:
     pacote = get_pacote(db, pacote_id)
+    pacote_id_registrado, nm_pacote_registrado = pacote.id, pacote.nm_pacote
     pacote_repository.delete(db, pacote)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_PACOTE, pacote_id_registrado, auditoria.ACAO_EXCLUIR,
+        f"Pacote {nm_pacote_registrado} excluído",
+    )
 
 
 def aprovar_pacote_gerente(db: Session, pacote_id: int, usuario_atual: Usuario) -> Pacote:
@@ -69,7 +111,12 @@ def aprovar_pacote_gerente(db: Session, pacote_id: int, usuario_atual: Usuario) 
 
     pacote.sn_aprovado_gerente = "S"
     pacote.id_usuario_aprovador_gerente = usuario_atual.id
-    return pacote_repository.update(db, pacote)
+    pacote = pacote_repository.update(db, pacote)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_PACOTE, pacote.id, auditoria.ACAO_APROVAR_GERENTE,
+        f"Pacote {pacote.nm_pacote} aprovado pelo Gerente de Projeto",
+    )
+    return pacote
 
 
 def aplicar_pacote(db: Session, pacote_id: int, usuario_atual: Usuario, data: PacoteAplicarRequest) -> Pacote:
@@ -137,4 +184,9 @@ def aplicar_pacote(db: Session, pacote_id: int, usuario_atual: Usuario, data: Pa
 
     pacote.sn_aplicado = "S"
     pacote.id_usuario_aplicacao = usuario_atual.id
-    return pacote_repository.update(db, pacote)
+    pacote = pacote_repository.update(db, pacote)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_PACOTE, pacote.id, auditoria.ACAO_APLICAR,
+        f"Pacote {pacote.nm_pacote} aplicado",
+    )
+    return pacote

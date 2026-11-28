@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, require_roles
+from app.core.opencl_utils import checksum_gpu
 from app.database.session import get_db
 from app.models.correcao import Correcao
 from app.models.usuario import CargoUsuario, Usuario
@@ -12,13 +13,21 @@ router = APIRouter()
 
 
 @router.post("/correcoes", response_model=CorrecaoRead, status_code=status.HTTP_201_CREATED)
-def cadastrar_correcao(data: CorrecaoCreate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Correcao:
-    return correcao_service.create_correcao(db, data)
+def cadastrar_correcao(
+    data: CorrecaoCreate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.create_correcao(db, data, usuario_atual)
 
 
 @router.get("/correcoes", response_model=list[CorrecaoRead])
-def listar_correcoes(db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> list[Correcao]:
-    return correcao_service.list_correcoes(db)
+def listar_correcoes(response: Response, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> list[Correcao]:
+    correcoes = correcao_service.list_correcoes(db)
+    checksum = checksum_gpu([correcao.id for correcao in correcoes])
+    if checksum is not None:
+        response.headers["X-GPU-Checksum"] = str(checksum)
+    return correcoes
 
 
 @router.get("/correcoes/{correcao_id}", response_model=CorrecaoRead)
@@ -27,8 +36,13 @@ def obter_correcao(correcao_id: int, db: Session = Depends(get_db), _: Usuario =
 
 
 @router.put("/correcoes/{correcao_id}", response_model=CorrecaoRead)
-def atualizar_correcao(correcao_id: int, data: CorrecaoUpdate, db: Session = Depends(get_db), _: Usuario = Depends(get_current_user)) -> Correcao:
-    return correcao_service.update_correcao(db, correcao_id, data)
+def atualizar_correcao(
+    correcao_id: int,
+    data: CorrecaoUpdate,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Correcao:
+    return correcao_service.update_correcao(db, correcao_id, data, usuario_atual)
 
 
 @router.post("/correcoes/{correcao_id}/aprovar", response_model=CorrecaoRead)

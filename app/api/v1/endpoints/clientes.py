@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user
+from app.core.opencl_utils import checksum_gpu
 from app.database.session import get_db
 from app.models.cliente import Cliente
 from app.models.usuario import Usuario
@@ -22,12 +23,17 @@ def cadastrar_cliente(
 
 @router.get("/clientes", response_model=list[ClienteRead])
 def listar_clientes(
+    response: Response,
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1),
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ) -> list[Cliente]:
-    return cliente_service.list_clientes(db, skip=skip, limit=limit)
+    clientes = cliente_service.list_clientes(db, skip=skip, limit=limit)
+    checksum = checksum_gpu([cliente.id for cliente in clientes])
+    if checksum is not None:
+        response.headers["X-GPU-Checksum"] = str(checksum)
+    return clientes
 
 
 @router.get("/clientes/busca", response_model=list[ClienteRead])

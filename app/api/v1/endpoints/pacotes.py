@@ -1,9 +1,10 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user, require_roles
+from app.core.opencl_utils import checksum_gpu
 from app.database.session import get_db
 from app.models.pacote import Pacote
 from app.models.usuario import CargoUsuario, Usuario
@@ -32,10 +33,15 @@ def cadastrar_pacote(
 
 @router.get("/pacotes", response_model=list[PacoteRead])
 def listar_pacotes(
+    response: Response,
     db: Session = Depends(get_db),
     _: Usuario = Depends(get_current_user),
 ) -> list[Pacote]:
-    return pacote_service.list_pacotes(db)
+    pacotes = pacote_service.list_pacotes(db)
+    checksum = checksum_gpu([pacote.id for pacote in pacotes])
+    if checksum is not None:
+        response.headers["X-GPU-Checksum"] = str(checksum)
+    return pacotes
 
 
 @router.get("/pacotes/contagem", response_model=PacoteContagemRead)
@@ -87,9 +93,9 @@ def atualizar_pacote(
     pacote_id: int,
     data: PacoteUpdate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> Pacote:
-    return pacote_service.update_pacote(db, pacote_id, data)
+    return pacote_service.update_pacote(db, pacote_id, data, usuario_atual)
 
 
 @router.post("/pacotes/{pacote_id}/aprovar-gerente", response_model=PacoteRead)
@@ -115,6 +121,6 @@ def aplicar_pacote(
 def excluir_pacote(
     pacote_id: int,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
+    usuario_atual: Usuario = Depends(get_current_user),
 ) -> None:
-    pacote_service.delete_pacote(db, pacote_id)
+    pacote_service.delete_pacote(db, pacote_id, usuario_atual)

@@ -1,6 +1,7 @@
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from app.core import auditoria
 from app.models.cliente import Cliente
 from app.models.usuario import CargoUsuario, Usuario
 from app.repositories import cliente_repository, usuario_repository
@@ -29,7 +30,12 @@ def _validar_responsavel_gerente_projeto(db: Session, id_usuario: int) -> None:
 def create_cliente(db: Session, data: ClienteCreate, usuario_atual: Usuario) -> Cliente:
     _validar_gerente_projeto(usuario_atual)
     _validar_responsavel_gerente_projeto(db, data.id_usuario)
-    return cliente_repository.create(db, Cliente(**data.model_dump()))
+    cliente = cliente_repository.create(db, Cliente(**data.model_dump()))
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_CLIENTE, cliente.id, auditoria.ACAO_CRIAR,
+        f"Cliente {cliente.nm_cliente} cadastrado",
+    )
+    return cliente
 
 
 def list_clientes(db: Session, skip: int = 0, limit: int = 100) -> list[Cliente]:
@@ -57,9 +63,20 @@ def update_cliente(db: Session, cliente_id: int, data: ClienteUpdate, usuario_at
 
     for field, value in changes.items():
         setattr(cliente, field, value)
-    return cliente_repository.update(db, cliente)
+    cliente = cliente_repository.update(db, cliente)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_CLIENTE, cliente.id, auditoria.ACAO_ATUALIZAR,
+        f"Cliente {cliente.nm_cliente} atualizado",
+    )
+    return cliente
 
 
 def delete_cliente(db: Session, cliente_id: int, usuario_atual: Usuario) -> None:
     _validar_gerente_projeto(usuario_atual)
-    cliente_repository.delete(db, get_cliente(db, cliente_id))
+    cliente = get_cliente(db, cliente_id)
+    cliente_id_registrado, nm_cliente_registrado = cliente.id, cliente.nm_cliente
+    cliente_repository.delete(db, cliente)
+    auditoria.registrar(
+        db, usuario_atual, auditoria.ENTIDADE_CLIENTE, cliente_id_registrado, auditoria.ACAO_EXCLUIR,
+        f"Cliente {nm_cliente_registrado} excluído",
+    )
