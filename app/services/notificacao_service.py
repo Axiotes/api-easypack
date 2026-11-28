@@ -15,6 +15,13 @@ def create_notificacao(db: Session, data: NotificacaoCreate) -> Notificacao:
     return notificacao_repository.create(db, notificacao)
 
 
+def list_notificacoes_pendentes(db: Session, id_usuario: int) -> list[Notificacao]:
+    if usuario_repository.get_by_id(db, id_usuario) is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado")
+
+    return notificacao_repository.list_pendentes_por_usuario(db, id_usuario)
+
+
 def marcar_como_lida(db: Session, notificacao_id: int, usuario_atual: Usuario) -> Notificacao:
     notificacao = notificacao_repository.get_by_id(db, notificacao_id)
     if notificacao is None:

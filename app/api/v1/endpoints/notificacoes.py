@@ -19,6 +19,14 @@ def cadastrar_notificacao(
     return notificacao_service.create_notificacao(db, data)
 
 
+@router.get("/notificacoes/pendentes/{usuario_id}", response_model=list[NotificacaoRead])
+def listar_notificacoes_pendentes(
+    usuario_id: int,
+    db: Session = Depends(get_db),
+) -> list[Notificacao]:
+    return notificacao_service.list_notificacoes_pendentes(db, usuario_id)
+
+
 @router.patch("/notificacoes/{notificacao_id}/lida", response_model=NotificacaoRead)
 def marcar_notificacao_como_lida(
     notificacao_id: int,
