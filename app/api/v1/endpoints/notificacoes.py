@@ -15,6 +15,14 @@ router = APIRouter()
 def cadastrar_notificacao(
     data: NotificacaoCreate,
     db: Session = Depends(get_db),
-    _: Usuario = Depends(get_current_user),
 ) -> Notificacao:
     return notificacao_service.create_notificacao(db, data)
+
+
+@router.patch("/notificacoes/{notificacao_id}/lida", response_model=NotificacaoRead)
+def marcar_notificacao_como_lida(
+    notificacao_id: int,
+    db: Session = Depends(get_db),
+    usuario_atual: Usuario = Depends(get_current_user),
+) -> Notificacao:
+    return notificacao_service.marcar_como_lida(db, notificacao_id, usuario_atual)
